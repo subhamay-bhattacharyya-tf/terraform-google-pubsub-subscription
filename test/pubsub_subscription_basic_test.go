@@ -11,40 +11,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestPubSubSubscriptionBasic tests creating a basic Pub/Sub subscription.
+// TestPubSubSubscriptionBasic creates a temporary topic and subscription, asserts
+// outputs, then destroys both. No pre-existing topic is required.
 func TestPubSubSubscriptionBasic(t *testing.T) {
 	t.Parallel()
 
-	retrySleep := 5 * time.Second
 	unique := strings.ToLower(random.UniqueId())
-	baseName := fmt.Sprintf("tt-sub-%s", unique)
 	projectID := mustEnv(t, "GOOGLE_CLOUD_PROJECT")
-	topicID := mustEnv(t, "GOOGLE_PUBSUB_TOPIC")
 
 	tfOptions := &terraform.Options{
-		TerraformDir: "..",
+		TerraformDir: "./fixtures/basic",
 		NoColor:      true,
 		Vars: map[string]interface{}{
+			"project_id":   projectID,
 			"environment":  "devl",
 			"project_code": "tt",
-			"region":       "us-central1",
-			"pubsub_subscription_config": map[string]interface{}{
-				"base_name": baseName,
-				"topic":     fmt.Sprintf("projects/%s/topics/%s", projectID, topicID),
-				"location":  "us-central1",
-			},
+			"base_name":    fmt.Sprintf("sub-%s", unique),
+			"topic_name":   fmt.Sprintf("tt-topic-%s", unique),
 		},
 	}
 
 	defer terraform.Destroy(t, tfOptions)
 	terraform.InitAndApply(t, tfOptions)
 
-	time.Sleep(retrySleep)
+	time.Sleep(5 * time.Second)
 
-	expectedName := fmt.Sprintf("tt-%s-us-central1-devl", baseName)
+	expectedName := fmt.Sprintf("tt-sub-%s-us-central1-devl", unique)
 	outputName := terraform.Output(t, tfOptions, "subscription_name")
 	require.Equal(t, expectedName, outputName)
 
 	outputID := terraform.Output(t, tfOptions, "subscription_id")
-	require.Contains(t, outputID, baseName)
+	require.Contains(t, outputID, unique)
 }
