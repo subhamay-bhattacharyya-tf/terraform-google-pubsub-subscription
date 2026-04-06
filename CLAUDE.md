@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this module does
 
-This is a **Terraform module** that creates and manages a single `google_storage_bucket` resource on GCP. The entire public interface is one input variable (`gcs_config`) and eight outputs (id, name, project, location, url, self_link, storage_class, force_destroy). This will be used as a GitHub Repository Template. The actual modules with me implemented seperately.
+This is a **Terraform module** that creates and manages a single `google_pubsub_subscription` resource on GCP. The entire public interface is one input variable (`pubsub_subscription_config`) and eight outputs (id, name, project, location, url, self_link, storage_class, force_destroy). This will be used as a GitHub Repository Template. The actual modules with me implemented seperately.
 
 ## Common commands
 
@@ -34,8 +34,8 @@ pre-commit run --all-files
 
 ```text
 .                      # Root module — the publishable Terraform module
-├── main.tf            # Single google_storage_bucket resource
-├── variables.tf       # gcs_config object variable with all validations
+├── main.tf            # Single google_pubsub_subscription resource
+├── variables.tf       # pubsub_subscription_config object variable with all validations
 ├── outputs.tf         # Eight bucket attribute outputs
 ├── versions.tf        # Terraform >= 1.3.0, google provider >= 7.23.0
 ├── examples/
@@ -53,7 +53,7 @@ pre-commit run --all-files
 - Site content changes deploy automatically via GitHub Actions on push to main
 - This Terraform module only sccept one input of object type
 
-The module uses a single structured `gcs_config` object rather than flat variables. All validation (naming rules, storage class enum, project ID format, public access prevention values) lives in `variables.tf`.
+The module uses a single structured `pubsub_subscription_config` object rather than flat variables. All validation (naming rules, storage class enum, project ID format, public access prevention values) lives in `variables.tf`.
 
 ## CI pipeline (`.github/workflows/ci.yaml`)
 
