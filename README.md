@@ -151,22 +151,36 @@ terraform validate
 
 ## CI / Workload Identity Federation Setup
 
-The Terratest job authenticates to GCP via [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation). If the job fails with `Permission 'iam.serviceAccounts.getAccessToken' denied`, grant the WIF pool principal the required IAM binding:
+The Terratest job authenticates to GCP via [Workload Identity Federation](https://cloud.google.com/iam/docs/workload-identity-federation).
+
+### Repository variables
+
+| Variable | Value / Description |
+|----------|---------------------|
+| `GCP_PROJECT_ID` | `prj-20-pubsub-16748` — passed as `GOOGLE_CLOUD_PROJECT` to Terratest |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full WIF provider resource name (`projects/578842011545/locations/global/workloadIdentityPools/github-actions/providers/<provider-id>`) |
+| `GCP_SERVICE_ACCOUNT` | `sa-20-pubsub@prj-20-pubsub-16748.iam.gserviceaccount.com` |
+
+### Required IAM binding
+
+The service account must have `roles/iam.workloadIdentityUser` bound to this repository's WIF principal. Run once to set it up:
 
 ```bash
 gcloud iam service-accounts add-iam-policy-binding \
-    "<service-account-email>" \
-    --project="<gcp-project-id>" \
-    --role="roles/iam.workloadIdentityUser" \
-    --member="principalSet://iam.googleapis.com/projects/<project-number>/locations/global/workloadIdentityPools/<pool-name>/attribute.repository/<github-org>/terraform-google-pubsub-subscription"
+  sa-20-pubsub@prj-20-pubsub-16748.iam.gserviceaccount.com \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/578842011545/locations/global/workloadIdentityPools/github-actions/attribute.repository/subhamay-bhattacharyya-tf/terraform-google-pubsub-subscription"
 ```
 
-| Variable | Description |
-|----------|-------------|
-| `GCP_PROJECT_ID` | GCP project ID passed as `GOOGLE_CLOUD_PROJECT` to Terratest |
-| `GCP_PUBSUB_TOPIC` | Existing topic name passed as `GOOGLE_PUBSUB_TOPIC` to Terratest |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full WIF provider resource name |
-| `GCP_SERVICE_ACCOUNT` | Service account email to impersonate |
+> **Common failure:** If the Terratest job fails with `Permission 'iam.serviceAccounts.getAccessToken' denied`, the binding above is missing or points to the wrong repository. Verify with:
+>
+> ```bash
+> gcloud iam service-accounts get-iam-policy \
+>   sa-20-pubsub@prj-20-pubsub-16748.iam.gserviceaccount.com \
+>   --format=json
+> ```
+>
+> Ensure the `members` list contains `...attribute.repository/subhamay-bhattacharyya-tf/terraform-google-pubsub-subscription` (not `pubsub-topic` or any other module).
 
 ---
 
